@@ -88,10 +88,10 @@ class RFRNetModel():
                             os.makedirs('{:s}'.format(save_path))
                         save_ckpt('{:s}/g_{:d}.pth'.format(save_path, self.iter ), [('generator', self.G)], [('optimizer_G', self.optm_G)], self.iter)
                         
-                    if self.iter >= iters
+                    if self.iter >= iters:
                         break
                         
-            if self.iter >= iters
+            if self.iter >= iters:
                 break
 
         print("Finished training iter %d. Saving model." %(self.iter))
@@ -107,8 +107,7 @@ class RFRNetModel():
             para.requires_grad = False
         count = 0
         for items in test_loader:
-            gt_images, masks = self.__cuda__(*items)
-            masked_images = gt_images * masks
+            gt_images, masks, masked_images = self.__cuda__(*items)
             masks = torch.cat([masks]*3, dim = 1)
             fake_B, mask = self.G(masked_images, masks)
             comp_B = fake_B * (1 - masks) + gt_images * masks

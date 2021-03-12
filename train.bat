@@ -1,7 +1,7 @@
 python run.py ^
 --data_root data_train/images ^
 --mask_root data_train/masks ^
---model_path checkpoint/g_final_600209.pth ^
+--model_path checkpoint/g_final.pth ^
 --target_size 256 ^
 --mask_mode 1 ^
 --num_iters 600350 ^
