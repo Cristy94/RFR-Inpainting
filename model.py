@@ -91,8 +91,8 @@ class RFRNetModel():
                     if self.iter >= iters:
                         break
                         
-            if self.iter >= iters:
-                break
+                if self.iter >= iters:
+                    break
 
         print("Finished training iter %d. Saving model." %(self.iter))
         
