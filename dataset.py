@@ -52,7 +52,11 @@ class Dataset(torch.utils.data.Dataset):
             if self.augment and np.random.binomial(1, 0.5) > 0:
                 mask = mask[:, ::-1, ...]
 
-        return self.to_tensor(img), self.to_tensor(mask)
+        t_img = self.to_tensor(img)
+        t_mask = self.to_tensor(mask)
+        t_masked_image =  t_img * t_mask
+        
+        return t_img, t_mask, t_masked_image
 
     def load_mask(self, img, index):
         imgh, imgw = img.shape[0:2]

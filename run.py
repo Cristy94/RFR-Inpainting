@@ -15,6 +15,7 @@ def run():
     parser.add_argument('--num_iters', type=int, default=450000)
     parser.add_argument('--model_path', type=str, default="checkpoint/100000.pth")
     parser.add_argument('--batch_size', type=int, default=6)
+    parser.add_argument('--batch_preload_count', type=int, default=1)
     parser.add_argument('--n_threads', type=int, default=6)
     parser.add_argument('--finetune', action='store_true')
     parser.add_argument('--test', action='store_true')
@@ -31,8 +32,8 @@ def run():
     else:
         model.initialize_model(args.model_path, True)
         model.cuda()
-        dataloader = DataLoader(Dataset(args.data_root, args.mask_root, args.mask_mode, args.target_size, mask_reverse = True), batch_size = args.batch_size, shuffle = True, num_workers = args.n_threads)
-        model.train(dataloader, args.model_save_path, args.finetune, args.num_iters)
+        dataloader = DataLoader(Dataset(args.data_root, args.mask_root, args.mask_mode, args.target_size, mask_reverse = True), batch_size = args.batch_size * args.batch_preload_count, shuffle = True, num_workers = args.n_threads)
+        model.train(dataloader, args.model_save_path, args.finetune, args.num_iters, args.batch_size, args.batch_preload_count)
 
 if __name__ == '__main__':
     run()

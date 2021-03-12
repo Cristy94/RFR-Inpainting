@@ -47,35 +47,60 @@ class RFRNetModel():
         else:
             self.device = torch.device("cpu")
         
-    def train(self, train_loader, save_path, finetune = False, iters=450000):
+    def train(self, train_loader, save_path, finetune = False, iters=450000, batch_size = 6, batch_preload_count = 1):
     #    writer = SummaryWriter(log_dir="log_info")
         self.G.train(finetune = finetune)
         if finetune:
             self.optm_G = optim.Adam(filter(lambda p:p.requires_grad, self.G.parameters()), lr = 5e-5)
         print("Starting training from iteration:{:d}".format(self.iter))
         s_time = time.time()
+        
+        
         while self.iter<iters:
             for items in train_loader:
-                gt_images, masks = self.__cuda__(*items)
-                masked_images = gt_images * masks
-                self.forward(masked_images, masks, gt_images)
-                self.update_parameters()
-                self.iter += 1
+                gt_image_batch, mask_batch, masked_image_batch = self.__cuda__(*items)
+                # print("New batch of %s elements" %(items[0].size()[0]))
                 
-                if self.iter % 50 == 0:
-                    e_time = time.time()
-                    int_time = e_time - s_time
-                    print("Iteration:%d, l1_loss:%.4f, time_taken:%.2f" %(self.iter, self.l1_loss_val/50, int_time))
-                    s_time = time.time()
-                    self.l1_loss_val = 0.0
-                
-                if self.iter % 40000 == 0:
-                    if not os.path.exists('{:s}'.format(save_path)):
-                        os.makedirs('{:s}'.format(save_path))
-                    save_ckpt('{:s}/g_{:d}.pth'.format(save_path, self.iter ), [('generator', self.G)], [('optimizer_G', self.optm_G)], self.iter)
+                for batch_idx in range(0, batch_preload_count):
+                    left = batch_idx * batch_size
+                    right = left + min(batch_size, gt_image_batch.size()[0])
+                    gt_image = gt_image_batch[left:right]
+                    mask = mask_batch[left:right]
+                    masked_image = masked_image_batch[left:right]
+                    
+                    if gt_image.size()[0] == 0:
+                        break
+                      
+                    # print(len(train_loader), batch_idx, left, right, gt_image, mask, masked_image)
+                    self.forward(masked_image, mask, gt_image)
+                    self.update_parameters()
+                    self.iter += 1
+                    
+                    if self.iter % 50 == 0:
+                        e_time = time.time()
+                        int_time = e_time - s_time
+                        print("Iteration:%d, l1_loss:%.4f, time_taken:%.2f" %(self.iter, self.l1_loss_val/50, int_time))
+                        s_time = time.time()
+                        self.l1_loss_val = 0.0
+                    
+                    if self.iter % 40000 == 0:
+                        if not os.path.exists('{:s}'.format(save_path)):
+                            os.makedirs('{:s}'.format(save_path))
+                        save_ckpt('{:s}/g_{:d}.pth'.format(save_path, self.iter ), [('generator', self.G)], [('optimizer_G', self.optm_G)], self.iter)
+                        
+                    if self.iter >= iters
+                        break
+                        
+            if self.iter >= iters
+                break
+
+        print("Finished training iter %d. Saving model." %(self.iter))
+        
         if not os.path.exists('{:s}'.format(save_path)):
             os.makedirs('{:s}'.format(save_path))
-            save_ckpt('{:s}/g_{:s}.pth'.format(save_path, "final"), [('generator', self.G)], [('optimizer_G', self.optm_G)], self.iter)
+        # Save final checkpoint
+        save_ckpt('{:s}/g_{:s}.pth'.format(save_path, "final"), [('generator', self.G)], [('optimizer_G', self.optm_G)], self.iter)
+        save_ckpt('{:s}/g_{:s}_{:d}.pth'.format(save_path, "final", self.iter), [('generator', self.G)], [('optimizer_G', self.optm_G)], self.iter)
     def test(self, test_loader, result_save_path):
         self.G.eval()
         for para in self.G.parameters():
